@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PostFlow Dashboard</title>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f4f7f9; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .status-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-top: 20px; }
+        .btn { padding: 10px 20px; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; }
+        .btn-fb { background: #1877F2; color: white; }
+        .btn-logout { background: #edf2f7; color: #4a5568; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PostFlow</h1>
+            <button class="btn btn-logout" onclick="handleLogout()">Logout</button>
+        </div>
+
+        <div class="status-card">
+            <h3>Social Accounts</h3>
+            <div id="fb-disconnected">
+                <p>No Facebook account connected.</p>
+                <button class="btn btn-fb" onclick="connectFacebook()">Connect Facebook Page</button>
+            </div>
+            <div id="fb-connected" class="hidden">
+                <p>✅ <strong>Connected:</strong> <span id="page-name"></span></p>
+                <p style="font-size: 0.85em; color: #666;">You can now publish Reels.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Initial Page Load: Check if user is logged in
+        async function checkSession() {
+            try {
+                // We call an endpoint that returns user info (ID, connected status)
+                const res = await fetch('/auth/me'); 
+                if (res.status === 401) {
+                    window.location.href = '/login.html';
+                }
+                const data = await res.json();
+                
+                // Trigger UI update based on user status
+                if (data.user.isFacebookConnected) {
+                    showConnected(data.user.facebookPageName);
+                }
+            } catch (err) {
+                window.location.href = '/login.html';
+            }
+        }
+
+        // 2. Facebook Connection Trigger
+        async function connectFacebook() {
+            const res = await fetch('/api/auth/facebook/url');
+            const data = await res.json();
+            // Redirect the user to Meta's OAuth screen
+            window.location.href = data.url;
+        }
+
+        // 3. Handle Logout (Clears the HttpOnly Cookie)
+        async function handleLogout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login.html';
+        }
+
+        function showConnected(name) {
+            document.getElementById('fb-disconnected').classList.add('hidden');
+            document.getElementById('fb-connected').classList.remove('hidden');
+            document.getElementById('page-name').innerText = name || "Your Page";
+        }
+
+        // Run session check on load
+        checkSession();
+
+        // 4. Check for OAuth callback code in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        if (code) {
+            finishFacebookConnection(code);
+        }
+
+        async function finishFacebookConnection(code) {
+            const res = await fetch('/api/auth/facebook/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showConnected(data.pageName);
+                // Clean the URL (remove ?code=...)
+                window.history.replaceState({}, document.title, "/");
+            }
+        }
+    </script>
+</body>
+</html>

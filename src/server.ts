@@ -1,27 +1,27 @@
 import dotenv from 'dotenv';
+import express from 'express'; 
+import path from 'path'; 
 import { createBullBoard } from '@bull-board/api';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
-import { postQueue } from './config/redis'; // Import your queue
+import apiRoutes from './routes'; 
+import app from './app';
+import { connectDB } from './config/db';
+import { postQueue } from './config/redis';
 
 dotenv.config();
 
-import app from './app';
-import { connectDB } from './config/db';
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 (async () => {
   try {
-    await connectDB(); // 🔥 DB FIRST
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
+    await connectDB(); 
 
+    // --- Bull Board Setup ---
     const serverAdapter = new ExpressAdapter();
     serverAdapter.setBasePath('/admin/queues');
 
-    // 2. Create the Board
     createBullBoard({
       queues: [new BullMQAdapter(postQueue)],
       serverAdapter: serverAdapter,
@@ -29,7 +29,19 @@ const PORT = process.env.PORT || 3000;
 
     app.use('/admin/queues', serverAdapter.getRouter());
 
-    console.log('📊 Queue Dashboard running on /admin/queues');
+    // --- ⚠️ RESTORED THIS LINE (Serving Images) ---
+    // Without this, http://localhost:5000/uploads/image.png returns 404
+    app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+    // --- API Routes ---
+    app.use('/api', apiRoutes);
+
+    // --- Start Server ---
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📂 Uploads serving at http://localhost:${PORT}/uploads`);
+    });
+
   } catch (err) {
     console.error('❌ Server failed to start', err);
     process.exit(1);
