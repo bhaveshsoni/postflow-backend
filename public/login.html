@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | PostFlow</title>
+    <style>
+        :root { --primary: #2c5282; --bg: #f7fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 350px; }
+        h1 { font-size: 24px; color: var(--primary); margin-bottom: 24px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #4a5568; }
+        input { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        #message { margin-top: 15px; font-size: 14px; text-align: center; display: none; }
+        .error { color: #e53e3e; }
+        .success { color: #38a169; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <h1>PostFlow</h1>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" required placeholder="name@company.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="••••••••">
+        </div>
+        <button type="submit" id="loginBtn">Sign In</button>
+    </form>
+    <div id="message"></div>
+</div>
+
+<script>
+    const loginForm = document.getElementById('loginForm');
+    const messageDiv = document.getElementById('message');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('loginBtn');
+
+        // UI State
+        btn.disabled = true;
+        btn.innerText = 'Signing in...';
+        messageDiv.style.display = 'none';
+
+        try {
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // ✅ Since we use HttpOnly cookies, the browser has the token now.
+                // No need to save anything to localStorage.
+                messageDiv.className = 'success';
+                messageDiv.innerText = 'Login successful! Redirecting...';
+                messageDiv.style.display = 'block';
+                
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 1000);
+            } else {
+                throw new Error(data.message || 'Login failed');
+            }
+        } catch (err) {
+            messageDiv.className = 'error';
+            messageDiv.innerText = err.message;
+            messageDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.innerText = 'Sign In';
+        }
+    });
+</script>
+
+</body>
+</html>

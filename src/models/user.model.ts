@@ -5,6 +5,14 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  socialAccounts?: {
+    facebook?: {
+      accessToken: string; // This will store the ENCRYPTED token
+      pageId: string;
+      pageName: string;
+      connectedAt: Date;
+    };
+  };
 }
 
 const UserSchema = new Schema<IUser>(
@@ -12,8 +20,17 @@ const UserSchema = new Schema<IUser>(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    socialAccounts: {
+      facebook: {
+        accessToken: { type: String }, // For the secure permanent token
+        pageId: { type: String },      // Needed for the Reels API endpoint
+        pageName: { type: String },    // Displayed in your HTML dashboard
+        connectedAt: { type: Date }
+      }
+    }
   },
-  { timestamps: true }
+  { timestamps: true },
+  
 );
 
 // 🔐 Hash password before save

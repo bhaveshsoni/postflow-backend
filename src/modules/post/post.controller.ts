@@ -3,8 +3,6 @@ import asyncHandler from "express-async-handler"; // <--- 1. Import wrapper
 import { AuthRequest } from "../../common/middleware/auth.middleware";
 import * as postService from "./post.service";
 
-// 2. Wrap EVERY function with asyncHandler(...)
-
 export const createPost = asyncHandler(async (req: AuthRequest, res: Response) => {
     const post = await postService.createPost({
         ...req.body,

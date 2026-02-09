@@ -6,11 +6,16 @@ export interface IPost extends Document {
   status: "PENDING" | "PUBLISHED" | "FAILED";
   platform: "FACEBOOK" | "INSTAGRAM" | "LINKEDIN";
   userId: mongoose.Types.ObjectId;
+  imageUrl?: string;
+  platformPostId?: string;
+
 }
 
 const PostSchema = new Schema<IPost>(
   {
     content: { type: String, required: true },
+    imageUrl: { type: String },
+    platformPostId: { type: String },
     scheduledTime: { type: Date, required: true, index: true },
     status: {
       type: String,

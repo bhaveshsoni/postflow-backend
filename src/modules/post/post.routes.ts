@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { authMiddleware } from "../../common/middleware/auth.middleware";
+import { protect } from "../../common/middleware/auth.middleware";
 import * as postController from "./post.controller";
 const router = Router(); 
  
 
-router.use(authMiddleware);
+router.use(protect);
 
 router.post("/", postController.createPost);
 router.get("/", postController.getPosts);
